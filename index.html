@@ -105,6 +105,8 @@ function maskVal(v,c,ch){const th=s=>s.replace(/\B(?=(\d{3})+(?!\d))/g,'.');if(c
 function fmtAll(){document.querySelectorAll('input').forEach(el=>{if(!isNum(el)||!el.value)return;const c=curOf(el),n=num(el.value,c);el.value=c==='USD'?maskVal(String(n).replace('.',','),'USD'):maskVal(String(n),'PYG')})}
 document.addEventListener('input',e=>{const el=e.target;if(!isNum(el))return;const old=el.value,nv=maskVal(old,curOf(el),e.data);if(nv===old)return;const left=old.slice(0,el.selectionStart).replace(/[^\d,]/g,'').length;el.value=nv;let pos=0,n=0;while(pos<nv.length&&n<left){if(/[\d,]/.test(nv[pos]))n++;pos++}try{el.setSelectionRange(pos,pos)}catch(x){}});
 document.addEventListener('change',e=>{if(e.target.tagName==='SELECT'&&/-cur$/.test(e.target.id))fmtAll()});
+document.addEventListener('focusin',e=>{if(isNum(e.target))e.target.dataset.fv=e.target.value});
+document.addEventListener('focusout',e=>{const el=e.target;if(isNum(el)&&typeof el.onchange==='function'&&el.dataset.fv!==undefined&&el.dataset.fv!==el.value){el.dataset.fv=el.value;el.onchange()}});
 let rst=null;
 async function exportar(){const fn='finanzas-respaldo-'+today()+'.json',data=JSON.stringify(S,null,1);let dl=null;try{dl=window.claude&&await claude.use('downloads')}catch(e){}
 if(dl){try{await dl.save({filename:fn,data})}catch(e){if(!e||e.code!=='declined')alert('No se pudo descargar el respaldo')}return}
@@ -154,7 +156,7 @@ function vRes(){
  <div class="card hero"><div class='mu'>Saldo disponible (sin lo ahorrado)</div><div class="big ${bg<0?'ng':''}">${fmt(bg,'PYG')}</div><div class="big ${bu<0?'ng':''}" style="font-size:18px">${fmt(bu,'USD')}</div><div class="mu">Total aprox.: ${fmt(tot,'PYG')} (1 US$ = ${S.rate.toLocaleString('es-PY')} Gs.)</div></div>
  <div class="row"><div class="card"><div class="mu">Ingresos</div><b class="ok">${fmt(inc,'PYG')}</b></div><div class="card"><div class="mu">Gastos</div><b class="ng">${fmt(gas,'PYG')}</b></div></div>
  <div class="row"><div class="card"><div class="mu">Ocio</div><b>${fmt(oc,'PYG')}</b></div><div class="card"><div class="mu">Deuda pendiente</div><b>${fmt(dp,'PYG')}</b></div></div>
- ${resExtra()}${advCard()}<div class='card'><div class='mu'>Ahorrado en total</div><b>${fmt(svTot(),'PYG')}</b> <span class='mu'>· este mes ${fmt(sv,'PYG')}</span></div><div class='card'><h2>Resumen del mes</h2><div>${txt}${sv?` Ahorraste ${fmt(sv,'PYG')} este mes.`:''}</div></div><div class='card'><h2>Gastos por categoría</h2>${donut(cats)}</div><div class='card'><h2>Últimos 6 meses</h2>${bars()}</div>
+ ${resExtra()}${advCard()}<div class='card'><div class='mu'>Ahorrado en total</div><b>${fmt(svTot(),'PYG')}</b> <span class='mu'>· este mes ${fmt(sv,'PYG')}</span></div><div class='card'><h2>Resumen del mes</h2><div>${txt.replace(/Gs\.\./g,'Gs.')}${sv?` Ahorraste ${fmt(sv,'PYG')} este mes.`:''}</div></div><div class='card'><h2>Gastos por categoría</h2>${donut(cats)}</div><div class='card'><h2>Últimos 6 meses</h2>${bars()}</div>
  ${bl?`<div class="card"><h2>Presupuestos</h2>${bl}</div>`:''}
  ${repCard()}${backupCard()}<div class="card"><div class="mu">Tipo de cambio (Gs. por US$)</div><input inputmode="numeric" value="${S.rate}" onchange="S.rate=num(this.value,'PYG')||7500;save();R()"></div>`}
 function opts(a,sel){return a.map(x=>`<option ${x===sel?'selected':''}>${esc(x)}</option>`).join('')}
